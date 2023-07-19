@@ -9,16 +9,20 @@ class DBConnection:
         self.conn = psycopg2.connect(
                 host="localhost",
                 database="postgres",
-                user="work",
+                user="tarapatas",
                 password="fasgas")
         self.cursor = self.conn.cursor()
 
     def check_connection(self):
-        """
-        вывод на экран версии PostgreSQL БД
-        """
-        db_version = self.cursor.fetchone()
-        print(db_version)
+            """
+            вывод на экран версии PostgreSQL БД
+            """
+            print('PostgreSQL database version:')
+            self.cursor.execute('SELECT version()')
+
+            # display the PostgreSQL database server version
+            db_version = self.cursor.fetchone()
+            print(db_version)
 
     def get_from_db(self, query="select * from worker", value=()):
         """
@@ -60,9 +64,18 @@ class DBConnection:
         sql = """INSERT INTO workers (id_worker, full_name) VALUES (%s, %s);"""
         self.cursor.execute(sql, (id_worker, full_name))
         self.conn.commit()
+        
+    def add_reg(self, reg_ip, reg_info):
+        """
+        Запись нового работника в БД
+        :param id_worker:
+        :param full_name:
+        """
+        sql = """INSERT INTO regs (reg_ip, reg_info) VALUES (%s, %s);"""
+        self.cursor.execute(sql, (reg_ip, reg_info))
+        self.conn.commit()
 
     def __del__(self):  # Деструктор класса
         if self.conn is not None:
             self.conn.close()
             print('Database connection closed.')
-
