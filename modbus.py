@@ -17,7 +17,9 @@ def convert_value(regs2):
     b = reg1 + reg2 
     b_to_int = int(b, 2)
     return struct.unpack('f', struct.pack('I', b_to_int))[0]
-addresses = {"voltage_a": (5240,2), 
+
+
+sensor_data = {"voltage_a": (5240,2), 
              "current_a": (5252, 2),
              "active_power_a": (5264, 2),
              "reactive_power_a": (5276, 2),
@@ -42,22 +44,23 @@ addresses = {"voltage_a": (5240,2),
              "interfacial_voltage_b_c": (5326, 2),
              "interfacial_voltage_c_a": (5328, 2),
              }
-  
+sensor_data2 = {"voltage_a": (4000,2)}
 
 db = DBConnection()
 c = ModbusClient(host="192.168.1.100", port=502, auto_open=True, debug=True)
+addresses = sensor_data
 while(True):
     current_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
     values_from_device=[current_time]
-    addresses_names=["reading_time"]  
+    addresses_names=["reading_time"]
     for address_name, address_key in addresses.items():
         reg_addr, reg_nb=address_key
         regs2 = c.read_input_registers(reg_addr, reg_nb)
         value = convert_value(regs2)
         addresses_names.append(address_name)
-        values_from_device.append(value)
+        values_from_device.append(round(value,3))
     db.add_reg(addresses_names,*values_from_device)
-    time.sleep(0.875)
+    time.sleep(1)
 """
 for i in range(24):
     current_time = datetime.strptime(current_time, '%Y-%m-%dT%H:%M:%SZ').replace(hour=i).strftime('%Y-%m-%dT%H:%M:%SZ')
