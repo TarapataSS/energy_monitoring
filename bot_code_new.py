@@ -1,6 +1,9 @@
 import logging
+from datetime import datetime
 
 from telegram import __version__ as TG_VER
+
+from to_db import DBConnection
 
 try:
     from telegram import __version_info__
@@ -23,6 +26,8 @@ from telegram.ext import (
     filters,
 )
 
+db = DBConnection()
+
 # Enable logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -33,8 +38,6 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 STATION, NUM_MECH, CLOSE, GET_NAME = range(4)
-# user_list = [236872275]
-user_list = []
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -42,15 +45,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     reply_keyboard = [["Начать работу на установке", "Завершить работу"]]
 
     user_id = update.message.from_user.id
-    if user_id not in user_list:
+    if not db.check_workers(user_id):
         await update.message.reply_text(
-            "Привет! Я вас еще не знаю, введите имя и фамилию",
+            "Привет! Я Вас еще не знаю, введите имя и фамилию",
         )
         return GET_NAME
 
     await update.message.reply_text(
         "Привет! "
-        "Отправь /cancel, сели захотите завершить сессию\n\n"
+        "Отправьте /cancel, если захотите завершить сессию\n\n"
         "Вы планируете начать или закончить работу?",
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard, one_time_keyboard=True, input_field_placeholder="Начинаете или завершаете работу?"
@@ -65,12 +68,11 @@ async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
     logger.info("введенное имя  %s: %s", user.first_name, update.message.text)
 
-    user_list.append(user.id)
-
+    db.add_new_workers(user.id, update.message.text)
     reply_keyboard = [["Начать работу на установке", "Завершить работу"]]
 
     await update.message.reply_text(
-        "Отправь /cancel, сели захотите завершить сессию\n\n"
+        "Отправьте /cancel, сели захотите завершить сессию\n\n"
         "Вы планируете начать или закончить работу?",
         reply_markup=ReplyKeyboardMarkup(
             reply_keyboard, one_time_keyboard=True, input_field_placeholder="Начинаете или завершаете работу?"
@@ -85,8 +87,14 @@ async def station(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Stores the selected gender and asks for a photo."""
     user = update.message.from_user
     logger.info("Пользователь %s: выбрал %s", user.first_name, update.message.text)
-
     reply_keyboard = [["1", "2", "3"]]
+    if update.message.text=="Начать работу на установке":
+        action=1
+    elif update.message.text=="Завершить работу":
+        action=0
+    worker_id = update.message.from_user.id
+    now = datetime.now()
+    db.add_new_event(value=(now, worker_id, action))
     await update.message.reply_text(
         "Отлично, выберите номер установки",
         reply_markup=ReplyKeyboardMarkup(
@@ -97,11 +105,12 @@ async def station(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return NUM_MECH
 
 
-async def select_num_mech(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def select_num_mech(update: Update, context: ContextTypes.DEFAULT_TYPE, action = 1) -> int:
     """Stores the selected gender and asks for a photo."""
     user = update.message.from_user
+    machine = update.message.text
+    db.add_machine_to_event(machine, user.id)
     logger.info("Пользователь %s: выбрал %s", user.first_name, update.message.text)
-
     await update.message.reply_text(
         "Спасибо, ответ записан", reply_markup=ReplyKeyboardRemove()
     )

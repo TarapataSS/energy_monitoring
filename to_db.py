@@ -40,8 +40,17 @@ class DBConnection:
         запись нового события в БД
         :param value:
         """
-        sql = """INSERT INTO event (data_time, id_worker, action, machine) VALUES (%s, %s, %s, %s);"""
+        sql = """INSERT INTO event (data_time, id_worker, action) VALUES (%s, %s, %s);"""
         self.cursor.execute(sql, value)
+        self.conn.commit()
+
+    def add_machine_to_event(self, machine, id_worker):
+        """
+        добавление машины в событие в БД
+        :param value:
+        """
+        sql ="""UPDATE event SET machine = %s WHERE data_time = (SELECT MAX(data_time) FROM event WHERE id_worker = %s);"""
+        self.cursor.execute(sql, (machine, id_worker))
         self.conn.commit()
 
     def check_workers(self, id_worker):
