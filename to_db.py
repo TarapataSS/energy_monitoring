@@ -65,15 +65,32 @@ class DBConnection:
         self.cursor.execute(sql, (id_worker, full_name))
         self.conn.commit()
         
-    def add_reg(self, reg_ip, reg_info):
-        """
-        Запись нового работника в БД
-        :param id_worker:
-        :param full_name:
-        """
-        sql = """INSERT INTO regs (reg_ip, reg_info) VALUES (%s, %s);"""
-        self.cursor.execute(sql, (reg_ip, reg_info))
+    def add_reg(self, table_name, addresses_names, *args):
+        names_string = ', '.join([str(i) for i in addresses_names])
+        values_string =', '.join(['%s' for _ in addresses_names])
+        sql = """INSERT INTO """+table_name+""" ("""+names_string+""") VALUES ("""+values_string+""");"""
+        self.cursor.execute(sql, args)
         self.conn.commit()
+
+    def database_count(self, table_name):
+        # Получение количества записей в таблице
+        self.cursor.execute(f"SELECT COUNT(*) FROM {table_name};")
+        count = self.cursor.fetchone()[0]
+        return count
+    
+    def period(self, table_name):
+        # Получение периода записи
+        self.cursor.execute(f"SELECT reading_time FROM {table_name} ORDER BY reading_time ASC LIMIT 1;")
+        begin = self.cursor.fetchone()[0]
+        self.cursor.execute(f"SELECT reading_time FROM {table_name} ORDER BY reading_time DESC LIMIT 1;")
+        end = self.cursor.fetchone()[0]
+        return begin, end
+
+    def save_data(self, table_name):
+        # Получение записей из таблицы
+        self.cursor.execute(f"SELECT * FROM {table_name} ORDER BY reading_time DESC;")
+        records = self.cursor.fetchall()
+        return records
 
     def __del__(self):  # Деструктор класса
         if self.conn is not None:
