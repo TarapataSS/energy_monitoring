@@ -1,14 +1,10 @@
 from pyModbusTCP.client import ModbusClient
-from pyModbusTCP import utils
 from to_db import DBConnection
-import string
-import random
-import calendar
 import time
 from datetime import datetime 
 import time
 import struct
-from threading import Timer
+from threading import Thread
 
 def convert_value(regs2):
     b1, b2 = bin(regs2[1]), bin(regs2[0]) # возвращаем в двоичное представление числа
@@ -18,8 +14,34 @@ def convert_value(regs2):
     b_to_int = int(b, 2)
     return struct.unpack('f', struct.pack('I', b_to_int))[0]
 
+class Stand:
+ 
+    def __init__(self, ip, sensor_data, table_name):
+        self.c = ModbusClient(host=ip, port=502, auto_open=True, debug=True)
+        self.sensor_data = sensor_data        
+        self.table_name= table_name
 
-sensor_data = {"voltage_a": (5240,2), 
+    def forward(self):
+        while(True):
+            addresses = self.sensor_data
+            current_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            values_from_device=[current_time]
+            addresses_names=["reading_time"]
+            for address_name, address_key in addresses.items():
+                reg_addr, reg_nb=address_key
+                regs = self.c.read_input_registers(reg_addr, reg_nb)
+                value = convert_value(regs)
+                addresses_names.append(address_name)
+                if self.table_name=="sensor_data1" or self.table_name=="sensor_data2":
+                    value = -0.013*(value**2)+1.502*value-1.525
+                values_from_device.append(round(value,3))
+            db.add_reg(self.table_name, addresses_names,*values_from_device)
+            time.sleep(1)
+
+if __name__ == "__main__":
+    sensor_data1 = {"voltage": (4000,2)}
+    sensor_data2 = {"voltage_a": (4000,2),"voltage_b": (4003,2),"voltage_c": (4006,2)}
+    sensor_data3 = {"voltage_a": (5240,2), 
              "current_a": (5252, 2),
              "active_power_a": (5264, 2),
              "reactive_power_a": (5276, 2),
@@ -44,29 +66,16 @@ sensor_data = {"voltage_a": (5240,2),
              "interfacial_voltage_b_c": (5326, 2),
              "interfacial_voltage_c_a": (5328, 2),
              }
-sensor_data2 = {"voltage_a": (4000,2)}
-
-db = DBConnection()
-c = ModbusClient(host="192.168.1.100", port=502, auto_open=True, debug=True)
-addresses = sensor_data
-while(True):
-    current_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-    values_from_device=[current_time]
-    addresses_names=["reading_time"]
-    for address_name, address_key in addresses.items():
-        reg_addr, reg_nb=address_key
-        regs2 = c.read_input_registers(reg_addr, reg_nb)
-        value = convert_value(regs2)
-        addresses_names.append(address_name)
-        values_from_device.append(round(value,3))
-    db.add_reg(addresses_names,*values_from_device)
-    time.sleep(1)
-"""
-for i in range(24):
-    current_time = datetime.strptime(current_time, '%Y-%m-%dT%H:%M:%SZ').replace(hour=i).strftime('%Y-%m-%dT%H:%M:%SZ')
-    work_status=random.randint(0,2)
-    for j in range(60):
-        current_time = datetime.strptime(current_time, '%Y-%m-%dT%H:%M:%SZ').replace(minute=j).strftime('%Y-%m-%dT%H:%M:%SZ')
-        db.add_reg("192.168.3.4", random.randint(10,29), current_time, work_status)
-
-"""
+    db = DBConnection()
+    stand1=Stand("192.168.1.101", sensor_data1,  "sensor_data1")
+    stand2=Stand("192.168.1.99", sensor_data2, "sensor_data2")
+    stand3=Stand("192.168.1.98", sensor_data3, "sensor_data3")
+    th1 = Thread(target=stand1.forward)
+    th1.start()
+    th2 = Thread(target=stand2.forward)
+    th2.start()
+    th3 = Thread(target=stand3.forward)
+    th3.start()
+    th1.join()
+    th2.join()
+    th3.join()

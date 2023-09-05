@@ -65,10 +65,10 @@ class DBConnection:
         self.cursor.execute(sql, (id_worker, full_name))
         self.conn.commit()
         
-    def add_reg(self, addresses_names, *args):
+    def add_reg(self, table_name, addresses_names, *args):
         names_string = ', '.join([str(i) for i in addresses_names])
         values_string =', '.join(['%s' for _ in addresses_names])
-        sql = """INSERT INTO sensor_data ("""+names_string+""") VALUES ("""+values_string+""");"""
+        sql = """INSERT INTO """+table_name+""" ("""+names_string+""") VALUES ("""+values_string+""");"""
         self.cursor.execute(sql, args)
         self.conn.commit()
 
