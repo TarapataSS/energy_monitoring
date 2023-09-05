@@ -66,7 +66,11 @@ if __name__ == "__main__":
              "interfacial_voltage_b_c": (5326, 2),
              "interfacial_voltage_c_a": (5328, 2),
              }
+    
+    
     db = DBConnection()
+    
+    
     stand1=Stand("192.168.1.101", sensor_data1,  "sensor_data1")
     stand2=Stand("192.168.1.99", sensor_data2, "sensor_data2")
     stand3=Stand("192.168.1.98", sensor_data3, "sensor_data3")

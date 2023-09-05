@@ -72,6 +72,26 @@ class DBConnection:
         self.cursor.execute(sql, args)
         self.conn.commit()
 
+    def database_count(self, table_name):
+        # Получение количества записей в таблице
+        self.cursor.execute(f"SELECT COUNT(*) FROM {table_name};")
+        count = self.cursor.fetchone()[0]
+        return count
+    
+    def period(self, table_name):
+        # Получение периода записи
+        self.cursor.execute(f"SELECT reading_time FROM {table_name} ORDER BY reading_time ASC LIMIT 1;")
+        begin = self.cursor.fetchone()[0]
+        self.cursor.execute(f"SELECT reading_time FROM {table_name} ORDER BY reading_time DESC LIMIT 1;")
+        end = self.cursor.fetchone()[0]
+        return begin, end
+
+    def save_data(self, table_name):
+        # Получение записей из таблицы
+        self.cursor.execute(f"SELECT * FROM {table_name} ORDER BY reading_time DESC;")
+        records = self.cursor.fetchall()
+        return records
+
     def __del__(self):  # Деструктор класса
         if self.conn is not None:
             self.conn.close()

@@ -19,7 +19,24 @@ CREATE TABLE public.regs (
 	CONSTRAINT regs_pkey PRIMARY KEY (id)
 );
 
-CREATE TABLE public.sensor_data (
+CREATE TABLE public.sensor_data1 (
+	id int4 NOT NULL GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE),
+	reading_time timestamptz NULL,
+	current numeric(7, 3) NULL,
+	CONSTRAINT sensor_data1_pkey PRIMARY KEY (id)
+);
+
+
+CREATE TABLE public.sensor_data2 (
+	id int4 NOT NULL GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE),
+	reading_time timestamptz NULL,
+	current_a numeric(7, 3) NULL,
+	current_b numeric(7, 3) NULL,
+	current_c numeric(7, 3) NULL,
+	CONSTRAINT sensor_data2_pkey PRIMARY KEY (id)
+);
+
+CREATE TABLE public.sensor_data3 (
 	id int4 NOT NULL GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE),
 	reading_time timestamptz NULL,
 	voltage_a numeric(7, 3) NULL,
@@ -46,5 +63,5 @@ CREATE TABLE public.sensor_data (
 	interfacial_voltage_a_b numeric(6, 3) NULL,
 	interfacial_voltage_b_c numeric(6, 3) NULL,
 	interfacial_voltage_c_a numeric(6, 3) NULL,
-	CONSTRAINT sensor_data_pkey PRIMARY KEY (id)
+	CONSTRAINT sensor_data3_pkey PRIMARY KEY (id)
 );
